@@ -1,5 +1,5 @@
 import fs from "fs/promises";
-import * as pdfParse from "pdf-parse";
+import { PDFParse } from "pdf-parse";
 
 /** extracts text from pdf files 
  * @param {string} filePath - The path to the PDF file
@@ -8,13 +8,11 @@ import * as pdfParse from "pdf-parse";
 export const extractTextFromPDF = async (filePath) => {
   try {
     const dataBuffer = await fs.readFile(filePath);
-    const parser = new pdfParse(new Uint8Array(dataBuffer) );
+    const parser = new PDFParse(new Uint8Array(dataBuffer) );
     const data = await parser.getText();
     return { 
         text: data.text, 
-        numPages: data.numpages ,
-        info: data.info,
-
+        numPages: data.total,
     };
   }
   catch (error) {
@@ -22,4 +20,3 @@ export const extractTextFromPDF = async (filePath) => {
     throw new Error("Failed to extract text from PDF");
   }
 };
-
