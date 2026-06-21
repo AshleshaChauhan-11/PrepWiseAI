@@ -74,29 +74,21 @@ PrepWiseAI uses Generative AI to analyze uploaded documents and automatically cr
 Frontend
 
 * ⚛️ React.js
-
 * ⚡ Vite
-
 * 🎨 CSS
-
 * 📜 JavaScript
 
 Backend
 
 * 🟢 Node.js
-
 * 🚂 Express.js
-
 * 🍃 MongoDB
-
 * 🧩 Mongoose
 
 AI Integration
 
 * 🤖 Google Gemini API
-
 * 🧠 Generative AI for content understanding
-
 * 📚 AI-powered educational assistance
 
 🏗️ System Architecture
@@ -180,14 +172,26 @@ Through PrepWiseAI, I worked on:
 The project focuses on improving educational productivity and showcases the ability to combine AI with scalable web technologies to build a meaningful real-world application.
 
 👩‍💻 Author
+
 Ashlesha Chauhan
+
 B.Tech CSE (AI Specialization)
+
 Full Stack & AI Enthusiast
+
 Passionate about building AI-driven solutions that solve real-world problems.
 
 ⭐ PrepWiseAI is not just a CRUD project—it is an AI-enabled educational productivity platform that demonstrates full-stack development, AI integration, authentication, database management, and real-world problem solving in a single application.
 
+Screenshots:
 
+<img width="1200" height="630" alt="image" src="https://github.com/user-attachments/assets/ebbdf3a1-e935-460e-a60b-3602dee8b694" />
 
+<img width="1064" height="908" alt="image" src="https://github.com/user-attachments/assets/34daa573-356d-4161-adb6-58fd46893c5d" />
 
+<img width="1452" height="912" alt="image" src="https://github.com/user-attachments/assets/8d812de2-5828-4723-b6b5-bb8ca40a6c18" />
+
+🏆 Best One-Line Description
+
+🚀 PrepWiseAI is an AI-powered learning platform that transforms study materials into intelligent revision resources such as flashcards, quizzes, summaries, and interactive AI assistance, helping students learn faster and prepare more effectively for exams.
 
