@@ -53,6 +53,10 @@ export const protect = async (req, res, next) => {
     console.log('Token Used:', token);
     console.log('JWT_SECRET Exists:', !!process.env.JWT_SECRET);
     console.log('JWT_SECRET Value:', process.env.JWT_SECRET);
+    console.log(token);
+    console.log(token.length);
+    console.log(token.charAt(0));
+    console.log(token.charAt(token.length - 1));
     console.log('================================\n');
 
     if (error.name === 'TokenExpiredError') {
