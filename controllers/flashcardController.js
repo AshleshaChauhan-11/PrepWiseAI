@@ -57,28 +57,26 @@ export const getAllFlashcardSets = async (req, res, next) => {
 
 export const reviewFlashcard = async (req, res, next) => {
   try {
-    const flashcardDoc = await Flashcard.findOne({
+    const flashcard = await Flashcard.findOne({
+      _id: req.params.cardId,
       userId: req.user._id,
-      "cards._id": req.params.cardId,
     });
 
-    if (!flashcardDoc) {
+    if (!flashcard) {
       return res.status(404).json({
         success: false,
         message: "Flashcard not found",
       });
     }
 
-    const card = flashcardDoc.cards.id(req.params.cardId);
+    flashcard.reviewCount = (flashcard.reviewCount || 0) + 1;
+    flashcard.lastReviewed = new Date();
 
-    card.reviewCount += 1;
-    card.lastReviewed = new Date();
-
-    await flashcardDoc.save();
+    await flashcard.save();
 
     res.status(200).json({
       success: true,
-      data: card,
+      data: flashcard,
     });
   } catch (error) {
     next(error);
@@ -87,41 +85,31 @@ export const reviewFlashcard = async (req, res, next) => {
 
 export const toggleStarFlashcard = async (req, res, next) => {
   try {
-    const flashcardDoc = await Flashcard.findOne({
+    const flashcard = await Flashcard.findOne({
+      _id: req.params.cardId,
       userId: req.user._id,
-      "cards._id": req.params.cardId,
     });
 
-    if (!flashcardDoc) {
+    if (!flashcard) {
       return res.status(404).json({
         success: false,
         message: "Flashcard not found",
       });
     }
 
-    const card = flashcardDoc.cards.find(
-      (c) => c._id.toString() === req.params.cardId
-    );
+    flashcard.isStarred = !flashcard.isStarred;
 
-    if (!card) {
-      return res.status(404).json({
-        success: false,
-        message: "Card not found in flashcard set",
-      });
-    }
-
-    card.isStarred = !card.isStarred;
-
-    await flashcardDoc.save();
+    await flashcard.save();
 
     res.status(200).json({
       success: true,
-      data: card,
+      data: flashcard,
     });
   } catch (error) {
     next(error);
   }
 };
+
 export const deleteFlashcardSet = async (req, res, next) => {
   try {
     const deletedCards = await Flashcard.deleteMany({
