@@ -13,44 +13,96 @@ import geminiService from '../utils/geminiService.js';
 // Private
 export const generateFlashcards = async (req, res, next) => {
   console.log("===== INSIDE GENERATE FLASHCARDS =====");
+
   try {
-    const { documentId, count=10 } = req.body;
-    
+    const { documentId, count = 10 } = req.body;
+
     if (!documentId) {
-      return res.status(400).json({ message: 'Document ID is required' });
+      return res.status(400).json({
+        success: false,
+        message: "Document ID is required",
+      });
     }
 
     const document = await Document.findById(documentId);
+
     console.log("Document:", document);
+
     if (!document) {
-      return res.status(404).json({ message: 'Document not found' });
+      return res.status(404).json({
+        success: false,
+        message: "Document not found",
+      });
     }
 
     const relevantChunks = findRelevantChunks(document.content, 5);
-    const prompt = `Generate 5-10 flashcards from this document content. Each flashcard should have a question and answer format. Format as JSON array: [{question: "", answer: ""}]\n\nDocument content:\n${relevantChunks.join('\n\n')}`;
+
+    const prompt = `
+Generate ${count} flashcards from the document content below.
+
+Return ONLY valid JSON.
+
+Format:
+[
+  {
+    "question": "Question text",
+    "answer": "Answer text"
+  }
+]
+
+Document Content:
+${relevantChunks.join("\n\n")}
+`;
 
     console.log("===== SENDING TO GEMINI =====");
-    console.log(prompt);
+
     const response = await geminiService.generateText(prompt);
+
     console.log("===== GEMINI RESPONSE =====");
     console.log(response);
 
-    const flashcardsData = JSON.parse(response.replace(/```json\s*|\s*```/g, ''));
+    let flashcardsData;
 
-    const flashcards = flashcardsData.map(fc => ({
-      documentId: documentId,
+    try {
+      const cleanedResponse = response
+        .replace(/```json/g, "")
+        .replace(/```/g, "")
+        .trim();
+
+      flashcardsData = JSON.parse(cleanedResponse);
+    } catch (parseError) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to parse Gemini response",
+        rawResponse: response,
+      });
+    }
+
+    if (!Array.isArray(flashcardsData)) {
+      return res.status(500).json({
+        success: false,
+        message: "Gemini did not return an array of flashcards",
+      });
+    }
+
+    const flashcards = flashcardsData.map((fc) => ({
+      userId: req.user._id,      // IMPORTANT FIX
+      documentId,
       question: fc.question,
-      answer: fc.answer
+      answer: fc.answer,
+      isStarred: false,
+      reviewCount: 0,
     }));
 
     const createdFlashcards = await Flashcard.create(flashcards);
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       count: createdFlashcards.length,
-      flashcards: createdFlashcards
+      flashcards: createdFlashcards,
     });
   } catch (error) {
+    console.error("Generate Flashcards Error:", error);
     next(error);
   }
 };
