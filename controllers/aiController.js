@@ -107,6 +107,29 @@ ${relevantChunks.join("\n\n")}
   }
 };
 
+export const markReviewed = async (req, res) => {
+  try {
+    const flashcard = await Flashcard.findById(req.params.id);
+
+    if (!flashcard) {
+      return res.status(404).json({
+        message: 'Flashcard not found'
+      });
+    }
+
+    flashcard.reviewed = true;
+
+    await flashcard.save();
+
+    res.status(200).json(flashcard);
+
+  } catch (error) {
+    res.status(500).json({
+      message: error.message
+    });
+  }
+};
+
 // @desc
 // Generate quiz from document
 // @route
