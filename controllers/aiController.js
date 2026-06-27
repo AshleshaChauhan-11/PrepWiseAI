@@ -35,8 +35,20 @@ export const generateFlashcards = async (req, res, next) => {
       });
     }
 
-    const relevantChunks = findRelevantChunks(document.content, 5);
+ let relevantChunks = [];
 
+if (document.chunks && document.chunks.length > 0) {
+  relevantChunks = document.chunks
+    .slice(0, 5)
+    .map(chunk => chunk.content);
+} else if (document.extractedText && document.extractedText.trim().length > 0) {
+  relevantChunks = [document.extractedText];
+} else {
+  return res.status(400).json({
+    success: false,
+    message: "Document content is empty or not processed."
+  });
+}
     const prompt = `
 Generate ${count} flashcards from the document content below.
 
