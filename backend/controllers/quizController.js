@@ -147,7 +147,7 @@ export const getQuizResults = async (req, res, next) => {
     if (!quiz) {
       return res.status(404).json({
         success: false,
-        error: 'Quiz not found',
+        error: "Quiz not found",
         statusCode: 404
       });
     }
@@ -155,34 +155,59 @@ export const getQuizResults = async (req, res, next) => {
     if (!quiz.completedAt) {
       return res.status(400).json({
         success: false,
-        error: 'Quiz not yet completed',
+        error: "Quiz not yet completed",
         statusCode: 400
       });
     }
 
+    // Build detailed results
+    const detailedResults = quiz.questions.map((question, index) => {
+      const userAnswer = quiz.userAnswers.find(
+        ans => ans.questionIndex === index
+      );
+
+      return {
+        questionIndex: index,
+        question: question.question,
+        options: question.options,
+        correctAnswer: question.correctAnswer,
+        selectedAnswer: userAnswer
+          ? userAnswer.selectedAnswer
+          : null,
+        isCorrect: userAnswer
+          ? userAnswer.isCorrect
+          : false,
+        explanation: question.explanation
+      };
+    });
+
     res.status(200).json({
       success: true,
       data: {
-        quizId: quiz._id,
-        score: quiz.score,
-        totalQuestions: quiz.totalQuestions,
-        userAnswers: quiz.userAnswers,
-        questions: quiz.questions,
-        completedAt: quiz.completedAt
+        quiz: {
+          id: quiz._id,
+          title: quiz.title,
+          document: quiz.documentId,
+          score: quiz.score,
+          completedAt: quiz.completedAt,
+          userAnswers: quiz.userAnswers,
+          totalQuestions: quiz.totalQuestions
+        },
+        results: detailedResults
       }
     });
+
   } catch (error) {
     next(error);
   }
-};
+}; 
 
 // @desc    Delete quiz
 // @route   DELETE /api/quizzes/:id
 // @access  Private
 export const deleteQuiz = async (req, res, next) => {
   try {
-    // TODO: Delete quiz
-  const quiz = await Quiz.findOne({
+    const quiz = await Quiz.findOne({
       _id: req.params.id,
       userId: req.user._id
     });
@@ -190,7 +215,7 @@ export const deleteQuiz = async (req, res, next) => {
     if (!quiz) {
       return res.status(404).json({
         success: false,
-        error: 'Quiz not found',
+        error: "Quiz not found",
         statusCode: 404
       });
     }
@@ -200,7 +225,7 @@ export const deleteQuiz = async (req, res, next) => {
     res.status(200).json({
       success: true,
       data: {},
-      message: 'Quiz deleted successfully'
+      message: "Quiz deleted successfully"
     });
   } catch (error) {
     next(error);
