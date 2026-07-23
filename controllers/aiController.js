@@ -2,7 +2,7 @@ import Document from '../models/Document.js';
 import Flashcard from '../models/Flashcard.js';
 import Quiz from '../models/Quiz.js';
 import ChatHistory from '../models/ChatHistory.js';
-import { findRelevantChunks } from '../utils/textChunker.js';
+// findRelevantChunks removed — use document.chunks / document.extractedText directly
 import geminiService from '../utils/geminiService.js';
 
 // @desc
@@ -150,35 +150,84 @@ export const markReviewed = async (req, res) => {
 // Private
 export const generateQuiz = async (req, res, next) => {
   try {
-    const { documentId } = req.body;
-    
+    const { documentId, count = 5 } = req.body;
+
     if (!documentId) {
-      return res.status(400).json({ message: 'Document ID is required' });
+      return res.status(400).json({ success: false, message: 'Document ID is required' });
     }
 
     const document = await Document.findById(documentId);
     if (!document) {
-      return res.status(404).json({ message: 'Document not found' });
+      return res.status(404).json({ success: false, message: 'Document not found' });
     }
 
-    const relevantChunks = findRelevantChunks(document.content, 5);
-    const prompt = `Generate 5-10 multiple choice quiz questions from this document content. Each question should have 4 options and indicate the correct answer. Format as JSON array: [{question: "", options: ["", "", "", ""], correctAnswer: ""}]\n\nDocument content:\n${relevantChunks.join('\n\n')}`;
+    // Use same content-extraction logic as generateFlashcards
+    let relevantChunks = [];
+    if (document.chunks && document.chunks.length > 0) {
+      relevantChunks = document.chunks.slice(0, 5).map(chunk => chunk.content);
+    } else if (document.extractedText && document.extractedText.trim().length > 0) {
+      relevantChunks = [document.extractedText];
+    } else {
+      return res.status(400).json({ success: false, message: 'Document content is empty or not processed.' });
+    }
+
+    const prompt = `
+Generate ${count} multiple choice quiz questions from the document content below.
+
+Return ONLY valid JSON with no extra text.
+
+Format:
+[
+  {
+    "question": "Question text",
+    "options": ["Option A", "Option B", "Option C", "Option D"],
+    "correctAnswer": "Option A",
+    "explanation": "Brief explanation why this is correct"
+  }
+]
+
+Each question MUST have exactly 4 options.
+
+Document Content:
+${relevantChunks.join('\n\n')}
+`;
 
     const response = await geminiService.generateText(prompt);
-    const quizData = JSON.parse(response.replace(/```json\s*|\s*```/g, ''));
 
-    const quiz = {
-      documentId: documentId,
-      questions: quizData
-    };
+    let quizData;
+    try {
+      const cleanedResponse = response
+        .replace(/```json/g, '')
+        .replace(/```/g, '')
+        .trim();
+      quizData = JSON.parse(cleanedResponse);
+    } catch (parseError) {
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to parse Gemini response',
+        rawResponse: response,
+      });
+    }
 
-    const createdQuiz = await Quiz.create(quiz);
+    if (!Array.isArray(quizData) || quizData.length === 0) {
+      return res.status(500).json({ success: false, message: 'Gemini did not return valid quiz questions' });
+    }
 
-    res.status(201).json({
+    // Build quiz document matching the schema (userId, title, totalQuestions are required)
+    const createdQuiz = await Quiz.create({
+      userId: req.user._id,
+      documentId,
+      title: `Quiz - ${document.title || document.fileName || 'Document'}`,
+      questions: quizData,
+      totalQuestions: quizData.length,
+    });
+
+    return res.status(201).json({
       success: true,
-      quiz: createdQuiz
+      quiz: createdQuiz,
     });
   } catch (error) {
+    console.error('Generate Quiz Error:', error);
     next(error);
   }
 };
