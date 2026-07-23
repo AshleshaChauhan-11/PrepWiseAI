@@ -165,7 +165,17 @@ export const generateQuiz = async (req, res, next) => {
     const prompt = `Generate 5-10 multiple choice quiz questions from this document content. Each question should have 4 options and indicate the correct answer. Format as JSON array: [{question: "", options: ["", "", "", ""], correctAnswer: ""}]\n\nDocument content:\n${relevantChunks.join('\n\n')}`;
 
     const response = await geminiService.generateText(prompt);
-    const quizData = JSON.parse(response.replace(/```json\s*|\s*```/g, ''));
+
+console.log("===== GEMINI RESPONSE =====");
+console.log(response);
+console.log("===========================");
+
+const cleanedResponse = response
+  .replace(/```json\s*/g, "")
+  .replace(/```/g, "")
+  .trim();
+
+const quizData = JSON.parse(cleanedResponse);
 
     const quiz = {
       documentId: documentId,
