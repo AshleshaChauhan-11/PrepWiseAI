@@ -148,57 +148,114 @@ export const markReviewed = async (req, res) => {
 // POST /api/ai/generate-quiz
 // @access
 // Private
+// @desc    Generate quiz from document
+// @route   POST /api/ai/generate-quiz
+// @access  Private
 export const generateQuiz = async (req, res, next) => {
   try {
     const { documentId } = req.body;
-    
+
     if (!documentId) {
-      return res.status(400).json({ message: 'Document ID is required' });
+      return res.status(400).json({
+        success: false,
+        message: "Document ID is required"
+      });
     }
 
+    // Find document
     const document = await Document.findById(documentId);
+
     if (!document) {
-      return res.status(404).json({ message: 'Document not found' });
+      return res.status(404).json({
+        success: false,
+        message: "Document not found"
+      });
     }
 
+    // Get relevant content
     const relevantChunks = findRelevantChunks(document.content, 5);
-    const prompt = `Generate 5-10 multiple choice quiz questions from this document content. Each question should have 4 options and indicate the correct answer. Format as JSON array: [{question: "", options: ["", "", "", ""], correctAnswer: ""}]\n\nDocument content:\n${relevantChunks.join('\n\n')}`;
 
+    // Prompt
+    const prompt = `
+Generate exactly 5 multiple-choice questions from the document below.
+
+IMPORTANT:
+- Return ONLY a valid JSON array.
+- Do NOT include markdown.
+- Do NOT include \`\`\`json or \`\`\`.
+- Do NOT include any explanation or extra text.
+
+JSON format:
+
+[
+  {
+    "question": "Question here",
+    "options": [
+      "Option A",
+      "Option B",
+      "Option C",
+      "Option D"
+    ],
+    "correctAnswer": "Option A"
+  }
+]
+
+Document:
+
+${relevantChunks.join("\n\n")}
+`;
+
+    // Generate response
     const response = await geminiService.generateText(prompt);
 
-console.log("===== GEMINI RESPONSE =====");
-console.log(response);
-console.log("===========================");
+    console.log("========== GEMINI RESPONSE ==========");
+    console.log(response);
+    console.log("=====================================");
 
-const cleanedResponse = response
-  .replace(/```json\s*/g, "")
-  .replace(/```/g, "")
-  .trim();
+    // Remove markdown if present
+    const cleanedResponse = response
+      .replace(/```json\s*/gi, "")
+      .replace(/```/g, "")
+      .trim();
 
-  if (
-  !cleanedResponse.startsWith("[") &&
-  !cleanedResponse.startsWith("{")
-) {
-  return res.status(500).json({
-    success: false,
-    error: "AI did not return valid JSON",
-    aiResponse: cleanedResponse
-  });
-}
+    // Check if response looks like JSON
+    if (
+      !cleanedResponse.startsWith("[") &&
+      !cleanedResponse.startsWith("{")
+    ) {
+      return res.status(500).json({
+        success: false,
+        error: "AI did not return valid JSON.",
+        aiResponse: cleanedResponse
+      });
+    }
 
-const quizData = JSON.parse(cleanedResponse);
+    let quizData;
 
-    const quiz = {
-      documentId: documentId,
+    try {
+      quizData = JSON.parse(cleanedResponse);
+    } catch (err) {
+      console.error("JSON Parse Error:");
+      console.error(cleanedResponse);
+
+      return res.status(500).json({
+        success: false,
+        error: "Failed to parse AI response.",
+        aiResponse: cleanedResponse
+      });
+    }
+
+    // Save quiz
+    const createdQuiz = await Quiz.create({
+      documentId,
       questions: quizData
-    };
+    });
 
-    const createdQuiz = await Quiz.create(quiz);
-
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       quiz: createdQuiz
     });
+
   } catch (error) {
     next(error);
   }
