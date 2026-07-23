@@ -175,6 +175,17 @@ const cleanedResponse = response
   .replace(/```/g, "")
   .trim();
 
+  if (
+  !cleanedResponse.startsWith("[") &&
+  !cleanedResponse.startsWith("{")
+) {
+  return res.status(500).json({
+    success: false,
+    error: "AI did not return valid JSON",
+    aiResponse: cleanedResponse
+  });
+}
+
 const quizData = JSON.parse(cleanedResponse);
 
     const quiz = {
