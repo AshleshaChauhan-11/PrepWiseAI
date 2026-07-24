@@ -118,7 +118,7 @@ PrepWiseAI/
 └── README.md
 
 
-🎯 Real-World Applications
+🎯 Real-World Applications:
 
 * 🏫 College students preparing for exams
 
