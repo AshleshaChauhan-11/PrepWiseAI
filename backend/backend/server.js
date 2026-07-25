@@ -11,6 +11,7 @@ import authRoutes from './routes/authRoutes.js';
 import documentRoutes from './routes/documentRoutes.js';
 import flashcardRoutes from './routes/flashcardRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
+import quizRoutes from './routes/quizRoutes.js';
 
 // ES6 module __dirname alternative
 const __filename = fileURLToPath(import.meta.url);
@@ -43,6 +44,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/flashcards', flashcardRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/quizzes', quizRoutes);
 
 app.use(errorHandler);
 
@@ -58,7 +60,7 @@ app.use((req, res) => {
 // Start the server
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
-  console.log(`Server is running in ${process.env.NODE_ENV} modeon port ${PORT}`);
+  console.log(`Server is running in ${process.env.NODE_ENV} mode on port ${PORT}`);
 });
 
 process.on('unhandledRejection', (err) => {

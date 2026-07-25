@@ -13,45 +13,132 @@ import geminiService from '../utils/geminiService.js';
 // Private
 export const generateFlashcards = async (req, res, next) => {
   console.log("===== INSIDE GENERATE FLASHCARDS =====");
+
   try {
-    const { documentId, count=10 } = req.body;
-    
+    const { documentId, count = 10 } = req.body;
+
     if (!documentId) {
-      return res.status(400).json({ message: 'Document ID is required' });
+      return res.status(400).json({
+        success: false,
+        message: "Document ID is required",
+      });
     }
 
     const document = await Document.findById(documentId);
+
     console.log("Document:", document);
+
     if (!document) {
-      return res.status(404).json({ message: 'Document not found' });
+      return res.status(404).json({
+        success: false,
+        message: "Document not found",
+      });
     }
 
-    const relevantChunks = findRelevantChunks(document.content, 5);
-    const prompt = `Generate 5-10 flashcards from this document content. Each flashcard should have a question and answer format. Format as JSON array: [{question: "", answer: ""}]\n\nDocument content:\n${relevantChunks.join('\n\n')}`;
+ let relevantChunks = [];
+
+if (document.chunks && document.chunks.length > 0) {
+  relevantChunks = document.chunks
+    .slice(0, 5)
+    .map(chunk => chunk.content);
+} else if (document.extractedText && document.extractedText.trim().length > 0) {
+  relevantChunks = [document.extractedText];
+} else {
+  return res.status(400).json({
+    success: false,
+    message: "Document content is empty or not processed."
+  });
+}
+    const prompt = `
+Generate ${count} flashcards from the document content below.
+
+Return ONLY valid JSON.
+
+Format:
+[
+  {
+    "question": "Question text",
+    "answer": "Answer text"
+  }
+]
+
+Document Content:
+${relevantChunks.join("\n\n")}
+`;
 
     console.log("===== SENDING TO GEMINI =====");
-    console.log(prompt);
+
     const response = await geminiService.generateText(prompt);
+
     console.log("===== GEMINI RESPONSE =====");
     console.log(response);
 
-    const flashcardsData = JSON.parse(response.replace(/```json\s*|\s*```/g, ''));
+    let flashcardsData;
 
-    const flashcards = flashcardsData.map(fc => ({
-      documentId: documentId,
+    try {
+      const cleanedResponse = response
+        .replace(/```json/g, "")
+        .replace(/```/g, "")
+        .trim();
+
+      flashcardsData = JSON.parse(cleanedResponse);
+    } catch (parseError) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to parse Gemini response",
+        rawResponse: response,
+      });
+    }
+
+    if (!Array.isArray(flashcardsData)) {
+      return res.status(500).json({
+        success: false,
+        message: "Gemini did not return an array of flashcards",
+      });
+    }
+
+    const flashcards = flashcardsData.map((fc) => ({
+      userId: req.user._id,      // IMPORTANT FIX
+      documentId,
       question: fc.question,
-      answer: fc.answer
+      answer: fc.answer,
+      isStarred: false,
+      reviewCount: 0,
     }));
 
     const createdFlashcards = await Flashcard.create(flashcards);
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       count: createdFlashcards.length,
-      flashcards: createdFlashcards
+      flashcards: createdFlashcards,
     });
   } catch (error) {
+    console.error("Generate Flashcards Error:", error);
     next(error);
+  }
+};
+
+export const markReviewed = async (req, res) => {
+  try {
+    const flashcard = await Flashcard.findById(req.params.id);
+
+    if (!flashcard) {
+      return res.status(404).json({
+        message: 'Flashcard not found'
+      });
+    }
+
+    flashcard.reviewed = true;
+
+    await flashcard.save();
+
+    res.status(200).json(flashcard);
+
+  } catch (error) {
+    res.status(500).json({
+      message: error.message
+    });
   }
 };
 
@@ -61,36 +148,114 @@ export const generateFlashcards = async (req, res, next) => {
 // POST /api/ai/generate-quiz
 // @access
 // Private
+// @desc    Generate quiz from document
+// @route   POST /api/ai/generate-quiz
+// @access  Private
 export const generateQuiz = async (req, res, next) => {
   try {
     const { documentId } = req.body;
-    
+
     if (!documentId) {
-      return res.status(400).json({ message: 'Document ID is required' });
+      return res.status(400).json({
+        success: false,
+        message: "Document ID is required"
+      });
     }
 
+    // Find document
     const document = await Document.findById(documentId);
+
     if (!document) {
-      return res.status(404).json({ message: 'Document not found' });
+      return res.status(404).json({
+        success: false,
+        message: "Document not found"
+      });
     }
 
+    // Get relevant content
     const relevantChunks = findRelevantChunks(document.content, 5);
-    const prompt = `Generate 5-10 multiple choice quiz questions from this document content. Each question should have 4 options and indicate the correct answer. Format as JSON array: [{question: "", options: ["", "", "", ""], correctAnswer: ""}]\n\nDocument content:\n${relevantChunks.join('\n\n')}`;
 
+    // Prompt
+    const prompt = `
+Generate exactly 5 multiple-choice questions from the document below.
+
+IMPORTANT:
+- Return ONLY a valid JSON array.
+- Do NOT include markdown.
+- Do NOT include \`\`\`json or \`\`\`.
+- Do NOT include any explanation or extra text.
+
+JSON format:
+
+[
+  {
+    "question": "Question here",
+    "options": [
+      "Option A",
+      "Option B",
+      "Option C",
+      "Option D"
+    ],
+    "correctAnswer": "Option A"
+  }
+]
+
+Document:
+
+${relevantChunks.join("\n\n")}
+`;
+
+    // Generate response
     const response = await geminiService.generateText(prompt);
-    const quizData = JSON.parse(response.replace(/```json\s*|\s*```/g, ''));
 
-    const quiz = {
-      documentId: documentId,
+    console.log("========== GEMINI RESPONSE ==========");
+    console.log(response);
+    console.log("=====================================");
+
+    // Remove markdown if present
+    const cleanedResponse = response
+      .replace(/```json\s*/gi, "")
+      .replace(/```/g, "")
+      .trim();
+
+    // Check if response looks like JSON
+    if (
+      !cleanedResponse.startsWith("[") &&
+      !cleanedResponse.startsWith("{")
+    ) {
+      return res.status(500).json({
+        success: false,
+        error: "AI did not return valid JSON.",
+        aiResponse: cleanedResponse
+      });
+    }
+
+    let quizData;
+
+    try {
+      quizData = JSON.parse(cleanedResponse);
+    } catch (err) {
+      console.error("JSON Parse Error:");
+      console.error(cleanedResponse);
+
+      return res.status(500).json({
+        success: false,
+        error: "Failed to parse AI response.",
+        aiResponse: cleanedResponse
+      });
+    }
+
+    // Save quiz
+    const createdQuiz = await Quiz.create({
+      documentId,
       questions: quizData
-    };
+    });
 
-    const createdQuiz = await Quiz.create(quiz);
-
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       quiz: createdQuiz
     });
+
   } catch (error) {
     next(error);
   }
