@@ -14,10 +14,13 @@ const router = express.Router();
 
 router.use(protect);
 
-router.get('/:documentId', getQuizzes);
-router.get('/quiz/:id', getQuizById);
-router.post('/:id/submit', submitQuiz);
-router.get('/:id/results', getQuizResults);
-router.delete('/:id', deleteQuiz);
+// IMPORTANT: Specific routes MUST come before wildcard /:documentId
+router.get('/quiz/:id', getQuizById);           // GET  /api/quizzes/quiz/:id
+router.post('/:id/submit', submitQuiz);         // POST /api/quizzes/:id/submit
+router.get('/:id/results', getQuizResults);     // GET  /api/quizzes/:id/results
+router.delete('/:id', deleteQuiz);              // DELETE /api/quizzes/:id
+
+// Wildcard LAST — otherwise it swallows all above routes
+router.get('/:documentId', getQuizzes);         // GET  /api/quizzes/:documentId
 
 export default router;
