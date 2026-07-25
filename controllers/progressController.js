@@ -1,13 +1,4 @@
-import express from 'express';
-import{
-    getDashboard,
-}
- from '../controllers/progressController.js';
-import protect from '../middleware/auth.js';
+import Document from '../models/Document.js';
+import Flashcard from '../models/Flashcard.js';
+import Quiz from '../models/Quiz.js';
 
-const router = express.Router();
-
-router.use(protect);    
-
-router.get('/dashboard', getDashboard); // GET /api/progress/dashboard
-export default router;
