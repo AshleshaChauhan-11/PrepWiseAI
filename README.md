@@ -147,7 +147,7 @@ The platform can be used as a personal AI study assistant that reduces revision 
 * 🌐 Multi-language support
 
 
-💼 Why This Project Matters
+💼 Why This Project Matters-
 
 This project demonstrates practical implementation of modern full-stack and AI technologies in an educational domain.
 
