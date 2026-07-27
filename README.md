@@ -1,4 +1,4 @@
-# 🚀 PrepWiseAI – AI Powered Learning Assistant
+# 🚀 PrepWiseAI – AI Powered Learning Assistant 
 🔗 Smart Learning • Faster Revision • Better Exam Preparation
 
 📝 Project Overview
@@ -27,7 +27,7 @@ The platform helps students revise faster, practice actively, and understand con
 
 PrepWiseAI uses Generative AI to analyze uploaded documents and automatically create learning resources that help students study smarter instead of studying longer.
 
-✨ Key Features
+✨ Key Features!
 
 📄 AI Document Analysis
 
@@ -61,7 +61,7 @@ PrepWiseAI uses Generative AI to analyze uploaded documents and automatically cr
 
 * Works like a personalized study tutor.
 
-🔐 Secure User Authentication
+🔐 Secure User Authentication!
 
 * User login and registration system.
 
