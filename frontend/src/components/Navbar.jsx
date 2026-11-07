@@ -107,3 +107,4 @@ const Navbar = ({ activeTab, setActiveTab, onOpenUpload }) => {
 };
 
 export default Navbar;
+

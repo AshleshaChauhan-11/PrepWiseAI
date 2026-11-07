@@ -221,3 +221,4 @@ const Dashboard = ({ onSelectDocument, onOpenUpload, onNavigateToDocuments }) =>
 };
 
 export default Dashboard;
+

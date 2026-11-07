@@ -834,3 +834,4 @@ const StudyWorkspace = ({ documentId, onBack }) => {
 };
 
 export default StudyWorkspace;
+

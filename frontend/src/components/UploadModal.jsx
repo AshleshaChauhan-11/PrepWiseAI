@@ -177,3 +177,4 @@ const UploadModal = ({ isOpen, onClose, onUploadSuccess }) => {
 };
 
 export default UploadModal;
+
