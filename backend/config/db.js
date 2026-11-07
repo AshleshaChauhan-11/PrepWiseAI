@@ -1,17 +1,36 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
+
+let cached = global.mongoose;
+
+if (!cached) {
+  cached = global.mongoose = {
+    conn: null,
+    promise: null
+  };
+}
 
 const connectDB = async () => {
-  if (mongoose.connection.readyState >= 1) {
-    return;
+  if (cached.conn && mongoose.connection.readyState >= 1) {
+    return cached.conn;
   }
+
+  if (!process.env.MONGODB_URI) {
+    throw new Error("MONGODB_URI environment variable is not set. Please add it to your Vercel Environment Variables.");
+  }
+
+  if (!cached.promise) {
+    cached.promise = mongoose.connect(process.env.MONGODB_URI, {
+      bufferCommands: false
+    });
+  }
+
   try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI);
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
+    cached.conn = await cached.promise;
+    console.log("MongoDB connected");
+    return cached.conn;
   } catch (error) {
-    console.error(`Error connecting to MongoDB: ${error.message}`);
-    if (!process.env.VERCEL) {
-      process.exit(1);
-    }
+    cached.promise = null;
+    console.error("MongoDB connection error:", error);
     throw error;
   }
 };
