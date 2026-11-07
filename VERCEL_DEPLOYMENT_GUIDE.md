@@ -67,7 +67,7 @@ Under the **Environment Variables** section, add the following 4 keys:
 | `JWT_SECRET` | `prepwise_super_secure_jwt_secret_2026_xyz` | Random 32+ character string for token signing |
 | `JWT_EXPIRE` | `7d` | Token expiration duration |
 | `GROQ_API_KEY` | `gsk_abc123...` | Your Groq Cloud API Key |
-| `GROQ_MODEL` | `llama-3.3-70b-versatile` | Target Groq LLM model (optional, defaults to llama-3.3-70b-versatile) |
+| `GROQ_MODEL` | `openai/gpt-oss-120b` | Target Groq LLM model (optional, defaults to openai/gpt-oss-120b) |
 | `NODE_ENV` | `production` | Production environment flag |
 
 ---

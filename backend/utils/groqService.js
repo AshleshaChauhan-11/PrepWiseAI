@@ -1,6 +1,6 @@
 import Groq from 'groq-sdk';
 
-const MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+const MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-120b';
 
 let groqClient = null;
 
@@ -15,7 +15,7 @@ const getClient = () => {
   if (!process.env.GROQ_API_KEY) {
     throw new Error(
       'GROQ_API_KEY is not set. Check that backend/.env exists and that ' +
-        "server.js has `import 'dotenv/config';` as its first line."
+      "server.js has `import 'dotenv/config';` as its first line."
     );
   }
 
