@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import authService from '../services/authService';
+import { formatErrorMessage } from '../utils/errorUtils';
 
 const AuthContext = createContext(null);
 
@@ -48,7 +49,7 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       return {
         success: false,
-        error: error.error || error.message || 'Login failed. Please check credentials.',
+        error: formatErrorMessage(error, 'Login failed. Please check credentials.'),
       };
     } finally {
       setLoading(false);
@@ -71,7 +72,7 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       return {
         success: false,
-        error: error.error || error.message || 'Registration failed. Try a different email.',
+        error: formatErrorMessage(error, 'Registration failed. Try a different email.'),
       };
     } finally {
       setLoading(false);

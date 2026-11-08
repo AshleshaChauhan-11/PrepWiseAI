@@ -28,7 +28,8 @@ export const protect = async (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const secret = process.env.JWT_SECRET || "default_prepwise_jwt_secret_key_2026";
+    const decoded = jwt.verify(token, secret);
 
     console.log('\n========== TOKEN VERIFIED ==========');
     console.log('Decoded Payload:', decoded);

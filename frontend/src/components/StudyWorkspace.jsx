@@ -3,6 +3,7 @@ import documentService from '../services/documentService';
 import flashcardService from '../services/flashcardService';
 import quizService from '../services/quizService';
 import aiService from '../services/aiService';
+import { formatErrorMessage } from '../utils/errorUtils';
 import { 
   ArrowLeft, 
   Layers, 
@@ -112,7 +113,7 @@ const StudyWorkspace = ({ documentId, onBack }) => {
       }
     } catch (err) {
       console.error('Failed to load document details:', err);
-      setError(err.error || err.message || 'Failed to load document');
+      setError(formatErrorMessage(err, 'Failed to load document'));
     } finally {
       setLoading(false);
     }
@@ -285,7 +286,7 @@ const StudyWorkspace = ({ documentId, onBack }) => {
       <div className="workspace-error">
         <AlertCircle size={40} className="text-danger" />
         <h3>Failed to load document</h3>
-        <p>{error || 'Document not found.'}</p>
+        <p>{typeof error === 'string' ? error : formatErrorMessage(error, 'Document not found.')}</p>
         <button className="btn-secondary" onClick={onBack}>
           <ArrowLeft size={16} /> Back to Documents
         </button>

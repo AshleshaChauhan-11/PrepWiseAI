@@ -7,6 +7,7 @@ import Dashboard from './components/Dashboard';
 import DocumentList from './components/DocumentList';
 import StudyWorkspace from './components/StudyWorkspace';
 import FlashcardDeckList from './components/FlashcardDeckList';
+import ErrorBoundary from './components/ErrorBoundary';
 import { Sparkles, BookOpen, Layers, CheckCircle, ArrowRight, Upload } from 'lucide-react';
 import './App.css';
 
@@ -163,8 +164,10 @@ const MainApp = () => {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <MainApp />
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <MainApp />
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }

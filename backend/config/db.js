@@ -15,22 +15,26 @@ const connectDB = async () => {
   }
 
   if (!process.env.MONGODB_URI) {
-    throw new Error("MONGODB_URI environment variable is not set. Please add it to your Vercel Environment Variables.");
+    throw new Error("MONGODB_URI environment variable is not set. Please add it to your Vercel Project Settings -> Environment Variables.");
   }
 
   if (!cached.promise) {
-    cached.promise = mongoose.connect(process.env.MONGODB_URI, {
-      bufferCommands: false
+    const opts = {
+      bufferCommands: false,
+      serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of hanging serverless lambda
+    };
+    cached.promise = mongoose.connect(process.env.MONGODB_URI, opts).then((mongooseInstance) => {
+      console.log("MongoDB connected successfully");
+      return mongooseInstance;
     });
   }
 
   try {
     cached.conn = await cached.promise;
-    console.log("MongoDB connected");
     return cached.conn;
   } catch (error) {
     cached.promise = null;
-    console.error("MongoDB connection error:", error);
+    console.error("MongoDB connection error:", error.message || error);
     throw error;
   }
 };

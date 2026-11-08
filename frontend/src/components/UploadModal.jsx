@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import documentService from '../services/documentService';
+import { formatErrorMessage } from '../utils/errorUtils';
 import { X, UploadCloud, FileText, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 
 const UploadModal = ({ isOpen, onClose, onUploadSuccess }) => {
@@ -71,7 +72,7 @@ const UploadModal = ({ isOpen, onClose, onUploadSuccess }) => {
       onUploadSuccess(response.data);
       onClose();
     } catch (err) {
-      setError(err.error || err.message || 'Failed to upload document');
+      setError(formatErrorMessage(err, 'Failed to upload document'));
     } finally {
       setUploading(false);
     }
@@ -92,7 +93,7 @@ const UploadModal = ({ isOpen, onClose, onUploadSuccess }) => {
         {error && (
           <div className="alert alert-error">
             <AlertCircle size={18} />
-            <span>{error}</span>
+            <span>{typeof error === 'string' ? error : formatErrorMessage(error)}</span>
           </div>
         )}
 

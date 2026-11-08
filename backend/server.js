@@ -28,44 +28,64 @@ app.use(
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 
-// Health check (lightweight, doesn't wait for DB connection)
-app.get("/api/health", (req, res) => {
+// Lightweight health check endpoint (never connects to DB)
+app.get(["/api/health", "/health"], (req, res) => {
   res.status(200).json({
     status: "ok",
     service: "PrepWiseAI Backend",
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    env: {
+      hasMongoUri: !!process.env.MONGODB_URI,
+      hasJwtSecret: !!process.env.JWT_SECRET,
+      hasGroqApiKey: !!process.env.GROQ_API_KEY,
+      nodeEnv: process.env.NODE_ENV || "production"
+    }
   });
 });
 
-app.get("/api", (req, res) => {
+app.get(["/api", "/"], (req, res) => {
   res.status(200).json({
     status: "ok",
-    message: "PrepWiseAI API is running"
+    message: "PrepWiseAI API is operational"
   });
 });
 
-// Database connection middleware for all API routes
+// Database connection middleware for functional API routes
 app.use(async (req, res, next) => {
+  // Never connect DB for health and status endpoints
+  const cleanPath = req.path.replace(/\/$/, "");
+  if (
+    cleanPath === "/health" ||
+    cleanPath === "/api/health" ||
+    cleanPath === "" ||
+    cleanPath === "/api"
+  ) {
+    return next();
+  }
+
   try {
     await connectDB();
     next();
   } catch (error) {
-    console.error("Database connection failed:", error);
+    console.error("Database connection failed:", error.message || error);
+    const isMissingUri = !process.env.MONGODB_URI;
     res.status(500).json({
       success: false,
-      error: "Database connection failed",
+      error: isMissingUri
+        ? "MongoDB URI is not configured. Please add MONGODB_URI in Vercel Project Settings -> Environment Variables."
+        : "Failed to connect to MongoDB database. Check your MongoDB Atlas Network Access whitelist (allow 0.0.0.0/0).",
       statusCode: 500
     });
   }
 });
 
-// API routes
-app.use("/api/auth", authRoutes);
-app.use("/api/documents", documentRoutes);
-app.use("/api/flashcards", flashcardRoutes);
-app.use("/api/quizzes", quizRoutes);
-app.use("/api/progress", progressRoutes);
-app.use("/api/ai", aiRoutes);
+// API routes (support both with and without /api prefix)
+app.use(["/api/auth", "/auth"], authRoutes);
+app.use(["/api/documents", "/documents"], documentRoutes);
+app.use(["/api/flashcards", "/flashcards"], flashcardRoutes);
+app.use(["/api/quizzes", "/quizzes"], quizRoutes);
+app.use(["/api/progress", "/progress"], progressRoutes);
+app.use(["/api/ai", "/ai"], aiRoutes);
 
 // Error handler
 app.use(errorHandler);
@@ -74,7 +94,7 @@ app.use(errorHandler);
 app.use((req, res) => {
   res.status(404).json({
     success: false,
-    error: "Route not found",
+    error: `Route not found: ${req.method} ${req.originalUrl || req.url}`,
     statusCode: 404
   });
 });

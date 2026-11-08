@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { formatErrorMessage } from '../utils/errorUtils';
 import { X, Mail, Lock, User, AlertCircle, ArrowRight, Loader2 } from 'lucide-react';
 
 const AuthModal = () => {
@@ -47,7 +48,7 @@ const AuthModal = () => {
     }
 
     if (!result.success) {
-      setError(result.error);
+      setError(formatErrorMessage(result.error));
     }
   };
 
@@ -78,7 +79,7 @@ const AuthModal = () => {
         {error && (
           <div className="alert alert-error">
             <AlertCircle size={18} />
-            <span>{error}</span>
+            <span>{typeof error === 'string' ? error : formatErrorMessage(error)}</span>
           </div>
         )}
 
